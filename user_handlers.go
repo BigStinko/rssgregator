@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	ErrDecode = errors.New("couldn't decode parameters")
-	ErrUser = errors.New("couldn't create user")
+	ErrCouldntDecode = errors.New("couldn't decode parameters")
+	ErrCouldntCreateUser = errors.New("couldn't create user")
 )
 
 func (cfg *apiConfig) postUsersHandler(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +24,7 @@ func (cfg *apiConfig) postUsersHandler(w http.ResponseWriter, r *http.Request) {
 	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, ErrDecode.Error())
+		respondWithError(w, http.StatusInternalServerError, ErrCouldntDecode.Error())
 		return
 	}
 
@@ -35,9 +35,13 @@ func (cfg *apiConfig) postUsersHandler(w http.ResponseWriter, r *http.Request) {
 		Name: params.Name,
 	})
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, ErrUser.Error())
+		respondWithError(w, http.StatusInternalServerError, ErrCouldntCreateUser.Error())
 		return
 	}
 
+	respondWithJSON(w, http.StatusOK, databaseUserToUser(user))
+}
+
+func (cfg *apiConfig) getUserHandler(w http.ResponseWriter, r *http.Request, user database.User) {
 	respondWithJSON(w, http.StatusOK, databaseUserToUser(user))
 }

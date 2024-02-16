@@ -53,6 +53,10 @@ func main() {
 	v1Router.Get("/err", errGetHandler)
 
 	v1Router.Post("/users", apiCfg.postUsersHandler)
+	v1Router.Get("/users", apiCfg.middlewareAuth(apiCfg.getUserHandler))
+	
+	v1Router.Post("/feeds", apiCfg.middlewareAuth(apiCfg.postFeedHandler))
+	v1Router.Get("/feeds", apiCfg.getFeedHandler)
 	router.Mount("/v1", v1Router)
 	server := &http.Server{
 		Addr: ":" + port,
