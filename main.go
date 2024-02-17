@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/BigStinko/rssgregator/internal/database"
 	"github.com/go-chi/chi/v5"
@@ -57,11 +58,21 @@ func main() {
 	
 	v1Router.Post("/feeds", apiCfg.middlewareAuth(apiCfg.postFeedHandler))
 	v1Router.Get("/feeds", apiCfg.getFeedHandler)
+
+	v1Router.Get("/feed_follows", apiCfg.middlewareAuth(apiCfg.getFeedFollowsHandler))
+	v1Router.Post("/feed_follows", apiCfg.middlewareAuth(apiCfg.postFeedFollowsHandler))
+	v1Router.Delete("/feed_follows/{feedFollowID}", apiCfg.middlewareAuth(apiCfg.deleteFeedFollowHandler))
+
+	v1Router.Get("/posts", apiCfg.middlewareAuth(apiCfg.getPostsHandler))
 	router.Mount("/v1", v1Router)
 	server := &http.Server{
 		Addr: ":" + port,
 		Handler: router,
 	}
+
+	const collectionConcurrency = 10
+	const collectionInterval = time.Minute
+	go startScraping(dbQueries, collectionConcurrency, collectionInterval)
 
 	log.Printf("Serving on port: %s\n", port)
 	log.Fatal(server.ListenAndServe())

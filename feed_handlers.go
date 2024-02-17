@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"time"
+	"encoding/json"
 
 	"github.com/BigStinko/rssgregator/internal/database"
 	"github.com/google/uuid"
@@ -21,11 +22,11 @@ func (cfg *apiConfig) postFeedHandler(w http.ResponseWriter, r *http.Request, us
 		return
 	}
 
-	feed, err := cfg.DB.CreatFeed(r.Context(), database.CreatFeedParams{
+	feed, err := cfg.DB.CreateFeed(r.Context(), database.CreateFeedParams{
 		ID: uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
-		UserId: user.ID,
+		UserID: user.ID,
 		Name: params.Name,
 		Url: params.URL,
 	})
@@ -33,7 +34,25 @@ func (cfg *apiConfig) postFeedHandler(w http.ResponseWriter, r *http.Request, us
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create feed")
 		return
 	}
-	respondWithJSON(w, http.StatusOK, databaseFeedToFeed(feed))
+
+	feedFollow, err := cfg.DB.CreateFeedFollow(r.Context(), database.CreateFeedFollowParams{
+		ID: uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID: user.ID,
+		FeedID: feed.ID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't create feed follow")
+		return
+	}
+	respondWithJSON(w, http.StatusOK, struct {
+		feed Feed
+		feedFollow FeedFollow
+	}{
+		feed: databaseFeedToFeed(feed),
+		feedFollow: databaseFeedFollowToFeedFollow(feedFollow),
+	})
 }
 
 func (cfg *apiConfig) getFeedHandler(w http.ResponseWriter, r *http.Request) {
@@ -42,5 +61,5 @@ func (cfg *apiConfig) getFeedHandler(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't get feeds")
 		return
 	}
-	respondWithJSON(w, http.StatusOK, databaseFeedToFeed(feeds))
+	respondWithJSON(w, http.StatusOK, databaseFeedsToFeeds(feeds))
 }
